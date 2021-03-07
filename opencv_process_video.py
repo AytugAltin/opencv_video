@@ -82,8 +82,6 @@ def Biblur(frame,d,sigmaColor,sigmaSpace):
 
 
 def biLateral_zone(frame,cap):
-        
-        
     if  between(cap, 8000, 8500) :
         frame = Biblur(frame,9,75,75)
         
@@ -99,10 +97,6 @@ def biLateral_zone(frame,cap):
     if  between(cap, 10500, 11000) :
         frame = Biblur(frame,9,500,500)
         
-        
-    if  between(cap, 10500, 11000) :
-        frame = Biblur(frame,9,1000,75)
-        
     if  between(cap, 11000, 12000) :
         frame = Biblur(frame,9,75,1000)
         
@@ -112,7 +106,13 @@ def biLateral_zone(frame,cap):
     return frame
 
 def objectGrabbing_zone(frame,cap):
-    gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+    gray = cv2.CreateImage(cv2.GetSize(frame), 8, 1)
+    edges = cv2.CreateImage(cv2.GetSize(frame), 8, 1)
+    cv2.cvtColor(frame, gray, cv2.COLOR_BGR2GRAY)
+    
+    create
+    
+    
     return gray
     
 
