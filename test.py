@@ -1,97 +1,123 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Sat Mar  6 13:19:13 2021
-
-@author: Tug
-"""
-
-"""Skeleton code for python script to process a video using OpenCV package
-
-:copyright: (c) 2021, Joeri Nicolaes
-:license: BSD license
-"""
+from __future__ import print_function
+import cv2 as cv
+import cv2 as cv2
 import argparse
-import cv2
-import sys
-
 import numpy as np
-import argparse
-import cv2
-import sys
+from opencv_process_video import *
+max_value = 255
+max_value_H = 360//2
+low_H = 0
+low_S = 0
+low_V = 0
+high_H = max_value_H
+high_S = max_value
+high_V = max_value
+window_capture_name = 'Video Capture'
+window_detection_name = 'Object Detection'
+low_H_name = 'Low H'
+low_S_name = 'Low S'
+low_V_name = 'Low V'
+high_H_name = 'High H'
+high_S_name = 'High S'
+high_V_name = 'High V'
+def on_low_H_thresh_trackbar(val):
+    global low_H
+    global high_H
+    low_H = val
+    low_H = min(high_H-1, low_H)
+    cv.setTrackbarPos(low_H_name, window_detection_name, low_H)
+def on_high_H_thresh_trackbar(val):
+    global low_H
+    global high_H
+    high_H = val
+    high_H = max(high_H, low_H+1)
+    cv.setTrackbarPos(high_H_name, window_detection_name, high_H)
+def on_low_S_thresh_trackbar(val):
+    global low_S
+    global high_S
+    low_S = val
+    low_S = min(high_S-1, low_S)
+    cv.setTrackbarPos(low_S_name, window_detection_name, low_S)
+def on_high_S_thresh_trackbar(val):
+    global low_S
+    global high_S
+    high_S = val
+    high_S = max(high_S, low_S+1)
+    cv.setTrackbarPos(high_S_name, window_detection_name, high_S)
+def on_low_V_thresh_trackbar(val):
+    global low_V
+    global high_V
+    low_V = val
+    low_V = min(high_V-1, low_V)
+    cv.setTrackbarPos(low_V_name, window_detection_name, low_V)
+def on_high_V_thresh_trackbar(val):
+    global low_V
+    global high_V
+    high_V = val
+    high_V = max(high_V, low_V+1)
+    cv.setTrackbarPos(high_V_name, window_detection_name, high_V)
+parser = argparse.ArgumentParser(description='Code for Thresholding Operations using inRange tutorial.')
+parser.add_argument('--camera', help='Camera divide number.', default=0, type=int)
+args = parser.parse_args()
+cap = cv.VideoCapture("bal.mp4")
+cv.namedWindow(window_capture_name)
+cv.namedWindow(window_detection_name)
+cv.createTrackbar(low_H_name, window_detection_name , low_H, max_value_H, on_low_H_thresh_trackbar)
+cv.createTrackbar(high_H_name, window_detection_name , high_H, max_value_H, on_high_H_thresh_trackbar)
+cv.createTrackbar(low_S_name, window_detection_name , low_S, max_value, on_low_S_thresh_trackbar)
+cv.createTrackbar(high_S_name, window_detection_name , high_S, max_value, on_high_S_thresh_trackbar)
+cv.createTrackbar(low_V_name, window_detection_name , low_V, max_value, on_low_V_thresh_trackbar)
+cv.createTrackbar(high_V_name, window_detection_name , high_V, max_value, on_high_V_thresh_trackbar)
 
-font                   = cv2.FONT_HERSHEY_SIMPLEX
-bottomText = (200,500)
-fontScale              = 1
-fontColor              = (255,255,255)
-lineType               = 2
-topLeftCornerOfText = (50,50)
+def run():
+    on_low_H_thresh_trackbar(6)
+    on_high_H_thresh_trackbar(12)
+    on_low_S_thresh_trackbar(117)
+    on_high_S_thresh_trackbar(242)
+    on_low_V_thresh_trackbar(56)
+    on_high_V_thresh_trackbar(242)
+    while True:
+        cap = cv.VideoCapture("bal2.mp4")
+        i = 15
+        while True:
+            
+            ret, frame = cap.read()
+            #frame = cv.imread("bal3.png")
+            if frame is None:
+                break
+            
+            #frame = Gblur(frame,(15,15), 0)
+            frame_HSV = cv.cvtColor(frame, cv.COLOR_BGR2HSV)
+            frame_threshold = cv.inRange(frame_HSV, (low_H, low_S, low_V), (high_H, high_S, high_V))
+            #frame_threshold = cv.inRange(frame_HSV, (6,157,56), (12,242,242))
+            
+            
+            kernel = np.ones((5,5),np.uint8)
+            
+            kernelc = cv2.getStructuringElement(cv2.MORPH_ELLIPSE,(i,i))
+            
+            frame_threshold = cv2.dilate(frame_threshold,kernelc,iterations = 1)
+            frame_threshold = cv2.erode(frame_threshold, kernelc, iterations=2) 
+            #frame_threshold = cv2.add(frame_threshold , cv2.Canny(frame_threshold,400,500))
+            #frame_threshold = cv2.dilate(frame_threshold,kernel,iterations = 1)
+            
+            frame_threshold= cv2.morphologyEx(frame_threshold,cv2.MORPH_OPEN,kernel, iterations = 2)
+            
+            
+            cv.imshow(window_capture_name, frame)
+            cv.imshow(window_detection_name, frame_threshold)
+            
+            
+            
+            key = cv.waitKey(30)
+            if key == ord('q') or key == 27:
+                return 0
+            
+            key = cv.waitKey(30)
+            if key == ord('i') or key == 20:
+                i = i + 1
+                print(i)
 
 
-# helper function to change what you do based on video seconds
-
-
-def write(frame,text):
-    cv2.putText(frame,text, 
-    bottomText, 
-    font, 
-    fontScale,
-    fontColor,
-    lineType)
-
-target = cv2.imread('bal.png',1)
-
-
-mask = np.zeros_like(target)
-mask = cv2.circle(mask, (25,25), 25, (255,255,255), -1)
-cv2.imshow("Search Region" , mask)
-
-cv2.waitKey(0)
-
-SearchImage = cv2.bitwise_and(target,target,mask = mask)
-
-cv2.imshow("Search Region" , SearchImage)
-cv2.waitKey()
-
-#convert RGBto Lab
-LabImage = cv2.cvtColor(SearchImage,cv2.COLOR_BGR2LAB)
-
-cv2.imshow("Lab(b)" , LabImage[:, :, 1])
-cv2.waitKey()
-
-ret,Binary = cv2.threshold(LabImage[:, :, 1], 0, 255, cv2.THRESH_OTSU)
-cv2.imshow('win1', Binary)
-cv2.waitKey(0)
-
- #find contours
-contours, hierarchy = cv2.findContours(Binary, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
-
-#create an empty image for contours
-img_contours = np.zeros(target.shape)
-# draw the contours on the empty image
-cv2.drawContours(img_contours, contours, -1, (0,255,0), 3)
-
-for cnt in contours:
-
-   x, y, w, h = cv2.boundingRect(cnt)
-   aspect_ratio = float(w) / h
-
-   area = cv2.contourArea(cnt)
-   x, y, w, h = cv2.boundingRect(cnt)
-   rect_area = w * h
-   extent = float(area) / rect_area
-
-   hull = cv2.convexHull(cnt)
-   hull_area = cv2.contourArea(hull)
-   solidity = float(area) / hull_area
-
-   equi_diameter = np.sqrt(4 * area / np.pi)
-
-   (x, y), (MA, ma), Orientation = cv2.fitEllipse(cnt)
-
-   print(" Width = {}  Height = {} area = {}  aspect ration = {}  extent  = {}  solidity = {}   equi_diameter = {}   orientation = {}"
-         .format(  w , h , area ,   aspect_ratio , extent , solidity , equi_diameter , Orientation))
-
-
-
-cv2.imshow('win1', img_contours)
-cv2.waitKey(0)
+            
+x = run()
