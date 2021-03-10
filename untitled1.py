@@ -59,9 +59,9 @@ def on_high_V_thresh_trackbar(val):
 parser = argparse.ArgumentParser(description='Code for Thresholding Operations using inRange tutorial.')
 parser.add_argument('--camera', help='Camera divide number.', default=0, type=int)
 args = parser.parse_args()
-cap = cv.VideoCapture("bal.mp4")
-cv.namedWindow(window_capture_name)
-cv.namedWindow(window_detection_name)
+# cap = cv.VideoCapture("bal.mp4")
+# cv.namedWindow(window_capture_name)
+# cv.namedWindow(window_detection_name)
 cv.createTrackbar(low_H_name, window_detection_name , low_H, max_value_H, on_low_H_thresh_trackbar)
 cv.createTrackbar(high_H_name, window_detection_name , high_H, max_value_H, on_high_H_thresh_trackbar)
 cv.createTrackbar(low_S_name, window_detection_name , low_S, max_value, on_low_S_thresh_trackbar)
@@ -69,47 +69,74 @@ cv.createTrackbar(high_S_name, window_detection_name , high_S, max_value, on_hig
 cv.createTrackbar(low_V_name, window_detection_name , low_V, max_value, on_low_V_thresh_trackbar)
 cv.createTrackbar(high_V_name, window_detection_name , high_V, max_value, on_high_V_thresh_trackbar)
 
+
 def run():
+    i = 1
     while True:
-        cap = cv.VideoCapture("balk.mp4")
+        cap = cv.VideoCapture("edges.mp4")
         while True:
             
             ret, frame = cap.read()
             #frame = cv.imread("bal3.png")
             if frame is None:
                 break
-            frame_HSV = cv.cvtColor(frame, cv.COLOR_BGR2HSV)
             
-            #frame_threshold = cv.inRange(frame_HSV, (low_H, low_S, low_V), (high_H, high_S, high_V))
-            frame_threshold = cv.inRange(frame_HSV, (26,38,120), (52,244,255))
+        
             
             
-            cv.imshow(window_capture_name, frame)
-            frame = frame_threshold
-            
-            kernel1 = np.ones((low_H,high_H),np.uint8)
-            
-            if low_H != 0:
-                frame = cv2.dilate(frame,kernel1,iterations = 1)
-                
-                
-            if low_V != 0:
-                kernel2 = np.ones((low_V,high_V),np.uint8)
-                frame = cv2.erode(frame, kernel2, iterations = 1) 
-                
-            if low_S != 0:
-                #frame = cv2.add(frame , cv2.Canny(frame,low_S,high_S))
-                frame = cv2.Canny(frame,low_S,high_S)
-                
+            frame1 = frame
+            cv.imshow("first", frame1)
             
             
-                
-                
-            cv.imshow(window_detection_name, frame)
+            frame2 = frame
+            frame2 = cv2.cvtColor(frame2, cv2.COLOR_BGR2GRAY)
+            frame2 = cv2.GaussianBlur(frame2,(3,3),0)
+            frame2 = cv2.Sobel(frame2,cv2.CV_8U,0,1,ksize=i)
+            cv.imshow("second", frame2)
+            
+            #frame2 = cv2.Sobel(frame2,cv2.CV_64F,0,i,ksize=5)
+            
+            #frame2 = cv2.Sobel(frame,cv2.CV_64F,0,i,ksize=5)
+            
+            
+            
+            #frame4 = cv2.cvtColor(frame2, cv2.COLOR_BGR2GRAY)
+            frame4 = np.array([[[0,s,0] for s in r] for r in frame2],dtype="u1")
+            
+            
+            tmp = cv2.cvtColor(frame4, cv2.COLOR_BGR2GRAY)
+            _,alpha = cv2.threshold(tmp,0,255,cv2.THRESH_BINARY)
+            b, g, r = cv2.split(frame4)
+            rgba = [b,g,r, alpha]
+            dst = cv2.merge(rgba,4)
+            green_rgba = dst
+            cv.imshow("OG", green_rgba)
+            
+            
+            b_channel, g_channel, r_channel = cv2.split(frame)
+
+            alpha_channel = np.ones(b_channel.shape, dtype=b_channel.dtype) * 50 #creating a dummy alpha channel image.
+            
+            img_BGRA = cv2.merge((b_channel, g_channel, r_channel, alpha_channel))
+            
+            frame3 = cv.addWeighted(img_BGRA,0.3,green_rgba,0.7,0)
+            frame3 = cv.add(img_BGRA,green_rgba)
+            frame3 = cv.add(frame3,green_rgba)
+            frame3 = cv.add(frame3,green_rgba)
+            frame3 = cv.add(frame3,green_rgba)
+            frame3 = cv.add(frame3,green_rgba)
+            cv.imshow("Third", frame3)
+            
+            
             
             key = cv.waitKey(30)
             if key == ord('q') or key == 27:
                 return 0
+            
+            key = cv.waitKey(30)
+            if key == ord('i') or key == 20:
+                i = i + 2
+                print(i)
 
             
 x = run()

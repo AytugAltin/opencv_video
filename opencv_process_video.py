@@ -12,10 +12,13 @@ font                   = cv2.FONT_HERSHEY_SIMPLEX
 bottomText = (200,500)
 fontScale              = 0.75
 fontColor              = (255,255,255)
+RedColor               = (255,0,0)
+GreenColor             = (1,255,1)
+BlueColor              = (0,0,255)
 lineType               = 2
 topLeftCornerOfText = (50,50)
 
-start = 14000
+start = 32000
 
 
 # helper function to change what you do based on video seconds
@@ -29,19 +32,19 @@ def skip(cap):
     
 
 
-def write(frame,text,location):
+def write(frame,text,location,color):
     cv2.putText(frame,text, 
     location, 
     font, 
     fontScale,
-    fontColor,
+    color,
     lineType)
     
-def sub(frame,text):
-    write(frame,text,bottomText)
+def sub(frame,text,color = fontColor):
+    write(frame,text,bottomText,color)
     
-def info(frame,text):
-    write(frame,text,topLeftCornerOfText)
+def info(frame,text,color = fontColor):
+    write(frame,text,topLeftCornerOfText,color)
     
 def grayscale(frame):
     frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
@@ -105,20 +108,27 @@ def biLateral_zone(frame,cap):
     return frame
 
 def objectGrabbing_zone(frame,cap):
-    if  between(cap, 12000, 19000):
-        hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
+    hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV) 
+    text = ""
+    if  between(cap, 14500, 19000):
         lower_bounds = np.array([26,82,119])
         upper_bounds = np.array([65,251,255])
-        frame = cv2.inRange(hsv,lower_bounds,upper_bounds)
+        frame = cv2.inRange(frame,lower_bounds,upper_bounds)
+        
+        text = "Threshold color of ball"
         
         
     
-    if  between(cap, 15000, 19000):
+    if  between(cap, 16000, 19000):
         kernel = np.ones((25,25),np.uint8)
         frame = cv2.dilate(frame,kernel,  iterations = 1)
         frame = cv2.erode(frame, kernel, iterations = 1)
-        sub(frame,"Close ball: Dilate + erode with kernel(25,25)")
+        #frame = cv2.cvtColor(frame, cv2.COLOR_Luv2LBGR)
+        text = "Close ball(filling holes): Dilate + erode with kernel(25,25)"
+        
     
+    
+    sub(frame,text)
     info(frame,"VHS space")
         
     
@@ -126,10 +136,51 @@ def objectGrabbing_zone(frame,cap):
     
 
 def sobel_zone(frame,cap):
+    frame2 = frame
+    frame2 = cv2.cvtColor(frame2, cv2.COLOR_BGR2GRAY)
+    frame2 = cv2.GaussianBlur(frame2,(3,3),0)
     
-    return frame
+    if  between(cap, 25000, 27000) :
+        frame2 = cv2.Sobel(frame2,cv2.CV_8U,0,1,ksize=5)
+        subtext = "Horizontal Edges Kernel size 5"
+        
+    if  between(cap, 27000, 28000) :
+        frame2 = cv2.Sobel(frame2,cv2.CV_8U,0,1,ksize=1)
+        subtext = "Horizontal Edges Kernel size 1"
+    
+    if  between(cap, 28000, 32000) :
+        frame2 = cv2.Sobel(frame2,cv2.CV_8U,1,0,ksize=1)
+        subtext = "Vertical Edges  Kernel size 1"
+    
+    purple = np.array([[[s,0,s] for s in r] for r in frame2],dtype="u1")
+    
+    tmp = cv2.cvtColor(purple, cv2.COLOR_BGR2GRAY)
+    _,alpha = cv2.threshold(tmp,0,255,cv2.THRESH_BINARY)
+    b, g, r = cv2.split(purple)
+    rgba = [b,g,r, alpha]
+    dst = cv2.merge(rgba,4)
+    purple_rgba = dst
+    
+    b_channel, g_channel, r_channel = cv2.split(frame)
+    alpha_channel = np.ones(b_channel.shape, dtype=b_channel.dtype) * 50 
+    img_BGRA = cv2.merge((b_channel, g_channel, r_channel, alpha_channel))
+
+    frame3 = cv2.add(img_BGRA,purple_rgba)
+    frame3 = cv2.add(frame3,purple_rgba)
+    frame3 = cv2.add(frame3,purple_rgba)
+    frame3 = cv2.add(frame3,purple_rgba)
+    frame3 = cv2.add(frame3,purple_rgba)
+    
+    sub(frame3,subtext)
+    info(frame3, "Sobel Edge Detection")
+    return frame3
     
 
+def hough_zone(frame,cap):
+    info(frame,"Hough Transform")
+    return frame
+    
+    
 
 def main(input_video_file: str, output_video_file: str) -> None:
     # OpenCV video objects to work with
@@ -158,14 +209,16 @@ def main(input_video_file: str, output_video_file: str) -> None:
                 if  between(cap, 8000, 11000):
                     frame = biLateral_zone(frame,cap)
                     
-                if  between(cap, 12000, 50000):
+                if  between(cap, 11000, 19000):
                     frame = objectGrabbing_zone(frame,cap)
                     
-                if  between(cap, 50000, 50000):
+                if  between(cap, 25000, 32000):
                     frame = sobel_zone(frame,cap)
+                    
+                if  between(cap, 32000, 40000):
+                    frame = hough_zone(frame,cap)
                  
                  
-    
                 # (optional) display the resulting frame
                 cv2.imshow('Frame', frame)
     
@@ -196,4 +249,4 @@ if __name__ == '__main__':
     if args.input is None or args.output is None:
         sys.exit("Please provide path to input and output video files! See --help")
 
-    main("input_full.mp4", "output.mp4v")
+    main("input.mp4", "output.mp4v")
