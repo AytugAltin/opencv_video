@@ -9,7 +9,7 @@ import sys
 import numpy as np
 
 font                   = cv2.FONT_HERSHEY_SIMPLEX
-bottomText = (200,500)
+bottomText = (50,500)
 fontScale              = 0.75
 fontColor              = (255,255,255)
 RedColor               = (255,0,0)
@@ -18,7 +18,7 @@ BlueColor              = (0,0,255)
 lineType               = 2
 topLeftCornerOfText = (50,50)
 
-start = 32000
+start = 11000
 
 
 # helper function to change what you do based on video seconds
@@ -108,22 +108,30 @@ def biLateral_zone(frame,cap):
     return frame
 
 def objectGrabbing_zone(frame,cap):
-    hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV) 
+    frame = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV) 
     text = ""
-    if  between(cap, 14500, 19000):
+    if  between(cap, 13000, 19000):
         lower_bounds = np.array([26,82,119])
-        upper_bounds = np.array([65,251,255])
+        upper_bounds = np.array([65,255,255])
         frame = cv2.inRange(frame,lower_bounds,upper_bounds)
         
         text = "Threshold color of ball"
         
         
     
-    if  between(cap, 16000, 19000):
+    if  between(cap, 14000, 19000):
         kernel = np.ones((25,25),np.uint8)
         frame = cv2.dilate(frame,kernel,  iterations = 1)
         frame = cv2.erode(frame, kernel, iterations = 1)
-        #frame = cv2.cvtColor(frame, cv2.COLOR_Luv2LBGR)
+        
+        height  = frame.shape[0]
+        width = frame.shape[1]
+        
+        left = np.zeros((height, width), np.uint8)
+        
+        frame = cv2.merge([np.zeros((height, width), np.uint8), 
+                           frame,
+                           np.zeros((height, width), np.uint8)])
         text = "Close ball(filling holes): Dilate + erode with kernel(25,25)"
         
     
@@ -134,21 +142,22 @@ def objectGrabbing_zone(frame,cap):
     
     return frame
     
+    
 
 def sobel_zone(frame,cap):
     frame2 = frame
     frame2 = cv2.cvtColor(frame2, cv2.COLOR_BGR2GRAY)
     frame2 = cv2.GaussianBlur(frame2,(3,3),0)
     
-    if  between(cap, 25000, 27000) :
+    if  between(cap, 24500, 26000) :
         frame2 = cv2.Sobel(frame2,cv2.CV_8U,0,1,ksize=5)
         subtext = "Horizontal Edges Kernel size 5"
         
-    if  between(cap, 27000, 28000) :
+    if  between(cap, 26000, 27500) :
         frame2 = cv2.Sobel(frame2,cv2.CV_8U,0,1,ksize=1)
         subtext = "Horizontal Edges Kernel size 1"
     
-    if  between(cap, 28000, 32000) :
+    if  between(cap, 27500, 29000) :
         frame2 = cv2.Sobel(frame2,cv2.CV_8U,1,0,ksize=1)
         subtext = "Vertical Edges  Kernel size 1"
     
@@ -177,7 +186,49 @@ def sobel_zone(frame,cap):
     
 
 def hough_zone(frame,cap):
+    # Code partially from Opencv Docs 
+    
+    if  between(cap, 29500, 31000):
+        frame2 = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY) 
+        frame2 = cv2.medianBlur(frame2, 9)
+        rows = frame2.shape[0]
+        circles = cv2.HoughCircles(frame2,cv2.HOUGH_GRADIENT, 1, rows/8, param1=100, param2= 30, minRadius=1, maxRadius=50)
+        color = (255, 0, 255)
+        text = "Minradius=1 Maxradius=50 param2=30"
+        
+    if  between(cap, 31000, 33000):
+        frame2 = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY) 
+        frame2 = cv2.medianBlur(frame2, 9)
+        rows = frame2.shape[0]
+        circles = cv2.HoughCircles(frame2,cv2.HOUGH_GRADIENT, 1, rows/8, param1=100, param2= 20, minRadius=1, maxRadius=50)
+        color = (0, 0, 255)
+        text = "Improvement1: Lowering param2 threshold"
+        
+    if  between(cap, 33000, 40000):
+        frame2 = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY) 
+        frame2 = cv2.medianBlur(frame2,9)
+        rows = frame2.shape[0]
+        circles = cv2.HoughCircles(frame2,cv2.HOUGH_GRADIENT, 1, rows/8, param1=100, param2=20, minRadius=10, maxRadius=23)
+        color = (255, 0, 0)
+        text = "Improvement2: MaxRadius from 50 to 25 + MinRadius from 1 to 10"
+    
+
+    if circles is not None:
+        circles = np.uint16(np.around(circles))
+        for i in circles[0, :]:
+            center = (i[0], i[1])
+            cv2.circle(frame, center, 1, (0, 100, 100), 3) # circle center
+            radius = i[2]
+            cv2.circle(frame, center, radius, color, 3) # circle outline
+
     info(frame,"Hough Transform")
+    sub(frame,text)
+    
+    return frame
+    
+    
+    
+def objectRe_zone(frame,cap):
     return frame
     
     
@@ -212,11 +263,14 @@ def main(input_video_file: str, output_video_file: str) -> None:
                 if  between(cap, 11000, 19000):
                     frame = objectGrabbing_zone(frame,cap)
                     
-                if  between(cap, 25000, 32000):
+                if  between(cap, 24500, 29000):
                     frame = sobel_zone(frame,cap)
                     
-                if  between(cap, 32000, 40000):
+                if  between(cap, 29500, 40000):
                     frame = hough_zone(frame,cap)
+                    
+                if  between(cap, 40000, 50000):
+                    frame = objectRe_zone(frame,cap)
                  
                  
                 # (optional) display the resulting frame

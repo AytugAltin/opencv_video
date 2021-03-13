@@ -4,6 +4,9 @@ import cv2 as cv2
 import argparse
 import numpy as np
 from opencv_process_video import *
+from matplotlib import pyplot as plt
+
+
 max_value = 1000
 max_value_H = 360//2
 low_H = 0
@@ -70,73 +73,57 @@ cv.createTrackbar(low_V_name, window_detection_name , low_V, max_value, on_low_V
 cv.createTrackbar(high_V_name, window_detection_name , high_V, max_value, on_high_V_thresh_trackbar)
 
 
+
+
 def run():
-    i = 1
+    x = 1
+    d = 2
+    
     while True:
-        cap = cv.VideoCapture("edges.mp4")
+        cap = cv.VideoCapture("bal.mp4")
         while True:
             
             ret, frame = cap.read()
-            #frame = cv.imread("bal3.png")
+            
             if frame is None:
                 break
             
-        
-            
-            
-            frame1 = frame
-            cv.imshow("first", frame1)
-            
-            
-            frame2 = frame
-            frame2 = cv2.cvtColor(frame2, cv2.COLOR_BGR2GRAY)
-            frame2 = cv2.GaussianBlur(frame2,(3,3),0)
-            frame2 = cv2.Sobel(frame2,cv2.CV_8U,0,1,ksize=i)
-            cv.imshow("second", frame2)
-            
-            #frame2 = cv2.Sobel(frame2,cv2.CV_64F,0,i,ksize=5)
-            
-            #frame2 = cv2.Sobel(frame,cv2.CV_64F,0,i,ksize=5)
-            
-            
-            
-            #frame4 = cv2.cvtColor(frame2, cv2.COLOR_BGR2GRAY)
-            frame4 = np.array([[[0,s,0] for s in r] for r in frame2],dtype="u1")
-            
-            
-            tmp = cv2.cvtColor(frame4, cv2.COLOR_BGR2GRAY)
-            _,alpha = cv2.threshold(tmp,0,255,cv2.THRESH_BINARY)
-            b, g, r = cv2.split(frame4)
-            rgba = [b,g,r, alpha]
-            dst = cv2.merge(rgba,4)
-            green_rgba = dst
-            cv.imshow("OG", green_rgba)
-            
-            
-            b_channel, g_channel, r_channel = cv2.split(frame)
+            cv2.imshow('Frame', frame)
+            # img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 
-            alpha_channel = np.ones(b_channel.shape, dtype=b_channel.dtype) * 50 #creating a dummy alpha channel image.
+            # img2 = img.copy()
+            # template = cv.imread('bal_feature.png',0)
             
-            img_BGRA = cv2.merge((b_channel, g_channel, r_channel, alpha_channel))
+            # w, h = template.shape[::-1]
+            # # All the 6 methods for comparison in a list
+            # methods = ['cv.TM_CCOEFF', 'cv.TM_CCOEFF_NORMED', 'cv.TM_CCORR',
+            #             'cv.TM_CCORR_NORMED', 'cv.TM_SQDIFF', 'cv.TM_SQDIFF_NORMED']
             
-            frame3 = cv.addWeighted(img_BGRA,0.3,green_rgba,0.7,0)
-            frame3 = cv.add(img_BGRA,green_rgba)
-            frame3 = cv.add(frame3,green_rgba)
-            frame3 = cv.add(frame3,green_rgba)
-            frame3 = cv.add(frame3,green_rgba)
-            frame3 = cv.add(frame3,green_rgba)
-            cv.imshow("Third", frame3)
+            # for meth in methods:
+            #     img = img2.copy()
+            #     method = eval(meth)
+            #     # Apply template Matching
+            #     res = cv.matchTemplate(img,template,method)
+            #     min_val, max_val, min_loc, max_loc = cv2.minMaxLoc(res)
+            #     # If the method is TM_SQDIFF or TM_SQDIFF_NORMED, take minimum
+            #     if method in [cv2.TM_SQDIFF, cv2.TM_SQDIFF_NORMED]:
+            #         top_left = min_loc
+            #     else:
+            #         top_left = max_loc
+            #     bottom_right = (top_left[0] + w, top_left[1] + h)
+            #     cv.rectangle(img,top_left, bottom_right, 255, 2)
+            #     # plt.subplot(121),plt.imshow(res,cmap = 'gray')
+            #     # plt.title('Matching Result'), plt.xticks([]), plt.yticks([])
+            #     # plt.subplot(122),plt.imshow(img,cmap = 'gray')
+            #     # plt.title('Detected Point'), plt.xticks([]), plt.yticks([])
+                
+            #     # plt.suptitle(meth)
+            #     # plt.show()
+                
             
-            
-            
-            key = cv.waitKey(30)
-            if key == ord('q') or key == 27:
-                return 0
-            
-            key = cv.waitKey(30)
-            if key == ord('i') or key == 20:
-                i = i + 2
-                print(i)
+            # cv2.imshow('Frame', frame)
+                            
+    
 
             
-x = run()
+run()

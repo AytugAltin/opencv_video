@@ -78,14 +78,15 @@ def run():
     on_high_V_thresh_trackbar(255)
     i = 4
     while True:
-        cap = cv.VideoCapture("longk.mp4")
+        cap = cv.VideoCapture("homebal.mp4")
         while True:
             
             ret, frame = cap.read()
-            #frame = cv.imread("bal3.png")
+            frame = cv.imread("homeball.png")
             if frame is None:
                 break
-            
+        
+            frame = objectGrabbing_zone(frame,cap)
             #frame = Gblur(frame,(15,15), 0)
             frame_HSV = cv.cvtColor(frame, cv.COLOR_BGR2HSV)
             frame_threshold = cv.inRange(frame_HSV, (low_H, low_S, low_V), (high_H, high_S, high_V))
@@ -107,7 +108,7 @@ def run():
             
             cv.imshow(window_capture_name, frame)
             cv.imshow(window_detection_name, frame_threshold)
-            
+        
             
             
             key = cv.waitKey(30)
