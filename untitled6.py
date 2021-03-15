@@ -43,7 +43,6 @@ def run():
                 eyes = eye_cascade.detectMultiScale(roi_gray)
             
             
-                        
             cv2.imshow('img',img)
             
             

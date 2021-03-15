@@ -267,6 +267,100 @@ def objectRe_zone(frame,cap):
     
     return frame
     
+
+def replace(frame):
+    img = frame
+    img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+
+    template = cv2.imread('finale_moment.png',0)
+    
+    w, h = template.shape[::-1]
+    
+    
+    method =  cv2.TM_SQDIFF_NORMED
+    res = cv2.matchTemplate(img,template,method )
+    
+    min_val, max_val, min_loc, max_loc = cv2.minMaxLoc(res)
+    
+
+    if method in [cv2.TM_SQDIFF, cv2.TM_SQDIFF_NORMED]:
+        top_left = min_loc
+    else:
+        top_left = max_loc
+        
+    bottom_right = (top_left[0] + w, top_left[1] + h)
+    cv2.rectangle(frame,top_left, bottom_right, 255, 2)
+        
+    img  = cv2.cvtColor(frame, cv2.COLOR_BGR2BGRA)
+    img_overlay_rgba = cv2.imread("fireball.png",-1)
+    x = int(img_overlay_rgba.shape[0]/4)
+    y = int(img_overlay_rgba.shape[1]/4)
+    img_overlay_rgba = cv2.resize(img_overlay_rgba,(x,y) )
+    
+    x = int(img_overlay_rgba.shape[0])
+    y = int(img_overlay_rgba.shape[1])
+    
+    x_image =  int((bottom_right[0] + top_left[0])/2 - x/2)
+    y_image =  int((bottom_right[1] + top_left[1])/2 - y/2)
+    
+    alpha_mask = img_overlay_rgba[:, :, 3] / 255.0
+    img_result = img[:, :, :3].copy()
+    img_overlay = img_overlay_rgba[:, :, :3]
+    overlay_image_alpha(img_result, img_overlay, x_image, y_image, alpha_mask)
+    
+    return img_result
+
+
+def carte_blanche(frame,cap):
+    if  between(cap, 46000, 50000):
+        face_cascade = cv2.CascadeClassifier("haarcascade_frontalface_default.xml")
+        eye_cascade = cv2.CascadeClassifier("haarcascade_eye.xml")
+        #save the image(i) in the same directory
+        img = frame
+        
+        gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+        faces = face_cascade.detectMultiScale(gray, 1.3, 5)
+        for (x,y,w,h) in faces:
+            img = cv2.rectangle(img,(x,y),(x+w,y+h),(255,0,0),2)
+            roi_gray = gray[y:y+h, x:x+w]
+            roi_color = img[y:y+h, x:x+w]
+            eyes = eye_cascade.detectMultiScale(roi_gray)
+            frame = img
+            sub(frame,"Face Detection")
+            
+    if  between(cap, 51000, 53000):
+        frame = replace(frame)
+        sub(frame,"Object replacement")
+            
+    return frame
+            
+
+def overlay_image_alpha(img, img_overlay, x, y, alpha_mask):
+    """Code from https://stackoverflow.com/questions/14063070/overlay-a-smaller-image-on-a-larger-image-python-opencv"""
+    
+    """Overlay `img_overlay` onto `img` at (x, y) and blend using `alpha_mask`.
+
+    `alpha_mask` must have same HxW as `img_overlay` and values in range [0, 1].
+    """
+    # Image ranges
+    y1, y2 = max(0, y), min(img.shape[0], y + img_overlay.shape[0])
+    x1, x2 = max(0, x), min(img.shape[1], x + img_overlay.shape[1])
+
+    # Overlay ranges
+    y1o, y2o = max(0, -y), min(img_overlay.shape[0], img.shape[0] - y)
+    x1o, x2o = max(0, -x), min(img_overlay.shape[1], img.shape[1] - x)
+
+    # Exit if nothing to do
+    if y1 >= y2 or x1 >= x2 or y1o >= y2o or x1o >= x2o:
+        return
+
+    # Blend overlay within the determined ranges
+    img_crop = img[y1:y2, x1:x2]
+    img_overlay_crop = img_overlay[y1o:y2o, x1o:x2o]
+    alpha = alpha_mask[y1o:y2o, x1o:x2o, np.newaxis]
+    alpha_inv = 1.0 - alpha
+
+    img_crop[:] = alpha * img_overlay_crop + alpha_inv * img_crop
     
 
 def main(input_video_file: str, output_video_file: str) -> None:
@@ -313,8 +407,8 @@ def main(input_video_file: str, output_video_file: str) -> None:
                 if  between(cap, 39000, 45000):
                     frame = objectRe_zone(frame,cap)
                     
-                if  between(cap, 45000, 50000):
-                    break
+                if  between(cap, 45000, 60000):
+                    frame = carte_blanche(frame,cap)
                  
                  
                 # (optional) display the resulting frame
@@ -348,4 +442,4 @@ if __name__ == '__main__':
     if args.input is None or args.output is None:
         sys.exit("Please provide path to input and output video files! See --help")
 
-    main("input.mp4", "output.mp4")
+    main(args.input, args.output)

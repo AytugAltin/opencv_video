@@ -33,8 +33,6 @@ def run():
             
             w, h = template.shape[::-1]
             
-            methods = ['cv.TM_CCOEFF', 'cv.TM_CCOEFF_NORMED', 'cv.TM_CCORR',
-            'cv.TM_CCORR_NORMED', 'cv.TM_SQDIFF', 'cv.TM_SQDIFF_NORMED']
             
             method =  cv.TM_SQDIFF_NORMED
             res = cv.matchTemplate(img,template,method )
@@ -72,7 +70,6 @@ def run():
             
                         
             cv2.imshow('img',img_result)
-            out.write(frame)
             
             
             key = cv.waitKey(30)
@@ -86,8 +83,9 @@ def run():
                 
         
 
-
 def overlay_image_alpha(img, img_overlay, x, y, alpha_mask):
+    """Code from https://stackoverflow.com/questions/14063070/overlay-a-smaller-image-on-a-larger-image-python-opencv"""
+    
     """Overlay `img_overlay` onto `img` at (x, y) and blend using `alpha_mask`.
 
     `alpha_mask` must have same HxW as `img_overlay` and values in range [0, 1].
