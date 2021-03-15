@@ -18,7 +18,7 @@ BlueColor              = (0,0,255)
 lineType               = 2
 topLeftCornerOfText = (50,50)
 
-start = 11000
+start = 0
 
 
 # helper function to change what you do based on video seconds
@@ -30,7 +30,6 @@ def skip(cap):
         return False
     return True
     
-
 
 def write(frame,text,location,color):
     cv2.putText(frame,text, 
@@ -49,6 +48,7 @@ def info(frame,text,color = fontColor):
 def grayscale(frame):
     frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
     sub(frame,'GrayScale')
+    frame = cv2.cvtColor(frame,cv2.COLOR_GRAY2RGB)
     return frame
 
 
@@ -114,7 +114,8 @@ def objectGrabbing_zone(frame,cap):
         lower_bounds = np.array([26,82,119])
         upper_bounds = np.array([65,255,255])
         frame = cv2.inRange(frame,lower_bounds,upper_bounds)
-        
+        if  between(cap, 13000, 14000):
+            frame = cv2.cvtColor(frame,cv2.COLOR_GRAY2RGB)
         text = "Threshold color of ball"
         
         
@@ -142,22 +143,21 @@ def objectGrabbing_zone(frame,cap):
     
     return frame
     
-    
 
 def sobel_zone(frame,cap):
     frame2 = frame
     frame2 = cv2.cvtColor(frame2, cv2.COLOR_BGR2GRAY)
     frame2 = cv2.GaussianBlur(frame2,(3,3),0)
     
-    if  between(cap, 24500, 26000) :
+    if  between(cap, 22500, 24000) :
         frame2 = cv2.Sobel(frame2,cv2.CV_8U,0,1,ksize=5)
         subtext = "Horizontal Edges Kernel size 5"
         
-    if  between(cap, 26000, 27500) :
+    if  between(cap, 24000, 26500) :
         frame2 = cv2.Sobel(frame2,cv2.CV_8U,0,1,ksize=1)
         subtext = "Horizontal Edges Kernel size 1"
     
-    if  between(cap, 27500, 29000) :
+    if  between(cap, 26500, 28000) :
         frame2 = cv2.Sobel(frame2,cv2.CV_8U,1,0,ksize=1)
         subtext = "Vertical Edges  Kernel size 1"
     
@@ -182,13 +182,14 @@ def sobel_zone(frame,cap):
     
     sub(frame3,subtext)
     info(frame3, "Sobel Edge Detection")
+    frame3 = cv2.cvtColor(frame3,cv2.COLOR_RGBA2RGB)
     return frame3
     
 
 def hough_zone(frame,cap):
     # Code partially from Opencv Docs 
     
-    if  between(cap, 29500, 31000):
+    if  between(cap, 28000, 30000):
         frame2 = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY) 
         frame2 = cv2.medianBlur(frame2, 9)
         rows = frame2.shape[0]
@@ -196,7 +197,7 @@ def hough_zone(frame,cap):
         color = (255, 0, 255)
         text = "Minradius=1 Maxradius=50 param2=30"
         
-    if  between(cap, 31000, 33000):
+    if  between(cap, 30000, 32000):
         frame2 = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY) 
         frame2 = cv2.medianBlur(frame2, 9)
         rows = frame2.shape[0]
@@ -204,7 +205,7 @@ def hough_zone(frame,cap):
         color = (0, 0, 255)
         text = "Improvement1: Lowering param2 threshold"
         
-    if  between(cap, 33000, 40000):
+    if  between(cap, 32000, 38000):
         frame2 = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY) 
         frame2 = cv2.medianBlur(frame2,9)
         rows = frame2.shape[0]
@@ -229,6 +230,41 @@ def hough_zone(frame,cap):
     
     
 def objectRe_zone(frame,cap):
+    res = frame
+    info(frame,"Template matching with Cross correlation (normed)")
+    if  between(cap, 39000, 45000):
+        img = frame
+        img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+        
+        template = cv2.imread('bal_feature.png',0)
+        w, h = template.shape[::-1]
+        
+        method =  cv2.TM_CCOEFF_NORMED
+        res = cv2.matchTemplate(img,template,method )
+        
+        if  between(cap, 42000, 45000):
+            
+            scaled = (res + 1)*255/2
+            res = scaled.astype(np.uint8)
+            
+            res = cv2.resize(res,(img.shape[1],img.shape[0]))
+            res = cv2.cvtColor(res,cv2.COLOR_GRAY2RGB)
+            info(res,"Likkelihood map Cross correlation (normed)")
+            
+            return res
+        
+        
+        min_val, max_val, min_loc, max_loc = cv2.minMaxLoc(res)
+        
+        if method in [cv2.TM_SQDIFF, cv2.TM_SQDIFF_NORMED]:
+            top_left = min_loc
+        else:
+            top_left = max_loc
+            
+        bottom_right = (top_left[0] + w, top_left[1] + h)
+        cv2.rectangle(frame,top_left, bottom_right, 255, 2)
+        
+    
     return frame
     
     
@@ -251,8 +287,13 @@ def main(input_video_file: str, output_video_file: str) -> None:
                 if cv2.waitKey(28) & 0xFF == ord('q'):
                     break
                 
+                if frame is None:
+                    break
+            
+                
                 if  between(cap, 1000, 3500):
                     frame = grayscale_zone(frame,cap)
+                    
                     
                 if  between(cap, 5000, 8000):
                     frame = smoothing_zone(frame,cap)
@@ -263,20 +304,24 @@ def main(input_video_file: str, output_video_file: str) -> None:
                 if  between(cap, 11000, 19000):
                     frame = objectGrabbing_zone(frame,cap)
                     
-                if  between(cap, 24500, 29000):
+                if  between(cap, 22500, 28000):
                     frame = sobel_zone(frame,cap)
                     
-                if  between(cap, 29500, 40000):
+                if  between(cap, 28000, 38000):
                     frame = hough_zone(frame,cap)
                     
-                if  between(cap, 40000, 50000):
+                if  between(cap, 39000, 45000):
                     frame = objectRe_zone(frame,cap)
+                    
+                if  between(cap, 45000, 50000):
+                    break
                  
                  
                 # (optional) display the resulting frame
                 cv2.imshow('Frame', frame)
     
                 # write frame that you processed to output
+                print(frame.shape)
                 out.write(frame)
                 
                 # Press Q on keyboard to  exit
@@ -303,4 +348,4 @@ if __name__ == '__main__':
     if args.input is None or args.output is None:
         sys.exit("Please provide path to input and output video files! See --help")
 
-    main("input.mp4", "output.mp4v")
+    main("input.mp4", "output.mp4")
