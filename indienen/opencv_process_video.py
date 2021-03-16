@@ -314,7 +314,7 @@ def replace(frame):
 def carte_blanche(frame,cap):
     if  between(cap, 46000, 50000):
         face_cascade = cv2.CascadeClassifier("haarcascade_frontalface_default.xml")
-        eye_cascade = cv2.CascadeClassifier("haarcascade_eye.xml")
+        # eye_cascade = cv2.CascadeClassifier("haarcascade_eye.xml")
         #save the image(i) in the same directory
         img = frame
         
@@ -324,13 +324,17 @@ def carte_blanche(frame,cap):
             img = cv2.rectangle(img,(x,y),(x+w,y+h),(255,0,0),2)
             roi_gray = gray[y:y+h, x:x+w]
             roi_color = img[y:y+h, x:x+w]
-            eyes = eye_cascade.detectMultiScale(roi_gray)
+            # eyes = eye_cascade.detectMultiScale(roi_gray)
             frame = img
             sub(frame,"Face Detection")
             
     if  between(cap, 51000, 53000):
         frame = replace(frame)
         sub(frame,"Object replacement")
+        
+    if  between(cap, 54000, 55000) or between(cap, 56000, 57000) or between(cap, 58000, 59000):
+        frame = cv2.flip(frame, 1)
+        sub(frame,"Flip")
             
     return frame
             
@@ -415,7 +419,7 @@ def main(input_video_file: str, output_video_file: str) -> None:
                 cv2.imshow('Frame', frame)
     
                 # write frame that you processed to output
-                print(frame.shape)
+                #print(frame.shape)
                 out.write(frame)
                 
                 # Press Q on keyboard to  exit
